@@ -1,29 +1,45 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { getAllCourses } from '../utils/courseUtils';
+import CourseCard from '../components/CourseCard';
+import styles from './HomePage.module.css';
 
 const HomePage: React.FC = () => {
   const courses = getAllCourses();
 
+  if (!courses || courses.length === 0) {
+    return (
+      <div className="container">
+        <div className={styles.homePage}>
+          <div className={styles.error}>
+            <h2>No courses available</h2>
+            <p>Please check back later for course content.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container">
-      <div style={{ padding: '2rem 0' }}>
-        <h1>Anthropic Courses</h1>
-        <p>Welcome to Anthropic's educational courses. Choose a course to get started:</p>
+      <div className={styles.homePage}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>Anthropic Courses</h1>
+          <p className={styles.subtitle}>
+            Welcome to Anthropic's educational courses. Explore our comprehensive collection 
+            of tutorials and guides to master AI development with Claude.
+          </p>
+        </header>
         
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', marginTop: '2rem' }}>
-          {courses.map(course => (
-            <div key={course.id} className="card">
-              <h3>{course.title}</h3>
-              <p>{course.description}</p>
-              <div style={{ marginTop: '1rem' }}>
-                <Link to={course.path} className="btn btn-primary">
-                  View Course ({course.lessons.length} lessons)
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+        <main>
+          <div className={styles.coursesGrid}>
+            {courses.map(course => (
+              <CourseCard 
+                key={course.id} 
+                course={course}
+              />
+            ))}
+          </div>
+        </main>
       </div>
     </div>
   );

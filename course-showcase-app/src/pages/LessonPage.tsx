@@ -1,35 +1,42 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getCourseById, getLessonById, getNextLesson, getPreviousLesson } from '../utils/courseUtils';
+import { useParams, Link, Navigate } from 'react-router-dom';
+import { getAllCourses } from '../utils/courseUtils';
+import { isValidCourseId, isValidLessonId, getBreadcrumbs, getLessonNavigation } from '../utils/routeUtils';
 
 const LessonPage: React.FC = () => {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
-  const course = courseId ? getCourseById(courseId) : undefined;
-  const lesson = courseId && lessonId ? getLessonById(courseId, lessonId) : undefined;
-  const nextLesson = courseId && lessonId ? getNextLesson(courseId, lessonId) : undefined;
-  const previousLesson = courseId && lessonId ? getPreviousLesson(courseId, lessonId) : undefined;
+  const courses = getAllCourses();
+  
+  // Validate route parameters
+  if (!courseId || !lessonId || 
+      !isValidCourseId(courseId, courses) || 
+      !isValidLessonId(courseId, lessonId, courses)) {
+    return <Navigate to="/404" replace />;
+  }
+  
+  const breadcrumbs = getBreadcrumbs(courseId, lessonId, courses);
+  const navigation = getLessonNavigation(courseId, lessonId, courses);
+  const { course, previous: previousLesson, next: nextLesson } = navigation;
+  const lesson = course?.lessons.find(l => l.id === lessonId);
 
   if (!course || !lesson) {
-    return (
-      <div className="container">
-        <div className="error">
-          <h1>Lesson Not Found</h1>
-          <p>The lesson "{lessonId}" in course "{courseId}" could not be found.</p>
-          <Link to="/" className="btn btn-primary">Back to Home</Link>
-        </div>
-      </div>
-    );
+    return <Navigate to="/404" replace />;
   }
 
   return (
     <div className="container">
       <div style={{ padding: '2rem 0' }}>
         <nav style={{ marginBottom: '1rem' }}>
-          <Link to="/" style={{ color: 'var(--text-secondary)' }}>Home</Link>
-          <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>→</span>
-          <Link to={course.path} style={{ color: 'var(--text-secondary)' }}>{course.title}</Link>
-          <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>→</span>
-          <span style={{ color: 'var(--text-primary)' }}>{lesson.title}</span>
+          {breadcrumbs.map((crumb, index) => (
+            <span key={crumb.path}>
+              {index > 0 && <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>→</span>}
+              {crumb.isActive ? (
+                <span style={{ color: 'var(--text-primary)' }}>{crumb.title}</span>
+              ) : (
+                <Link to={crumb.path} style={{ color: 'var(--text-secondary)' }}>{crumb.title}</Link>
+              )}
+            </span>
+          ))}
         </nav>
         
         <h1>{lesson.title}</h1>

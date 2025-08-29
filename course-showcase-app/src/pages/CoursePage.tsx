@@ -1,28 +1,38 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getCourseById } from '../utils/courseUtils';
+import { useParams, Link, Navigate } from 'react-router-dom';
+import { getCourseById, getAllCourses } from '../utils/courseUtils';
+import { isValidCourseId, getBreadcrumbs } from '../utils/routeUtils';
 
 const CoursePage: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const course = courseId ? getCourseById(courseId) : undefined;
+  const courses = getAllCourses();
+  
+  // Validate courseId parameter
+  if (!courseId || !isValidCourseId(courseId, courses)) {
+    return <Navigate to="/404" replace />;
+  }
+  
+  const course = getCourseById(courseId);
+  const breadcrumbs = getBreadcrumbs(courseId, undefined, courses);
 
   if (!course) {
-    return (
-      <div className="container">
-        <div className="error">
-          <h1>Course Not Found</h1>
-          <p>The course "{courseId}" could not be found.</p>
-          <Link to="/" className="btn btn-primary">Back to Home</Link>
-        </div>
-      </div>
-    );
+    return <Navigate to="/404" replace />;
   }
 
   return (
     <div className="container">
       <div style={{ padding: '2rem 0' }}>
         <nav style={{ marginBottom: '1rem' }}>
-          <Link to="/" style={{ color: 'var(--text-secondary)' }}>← Back to Courses</Link>
+          {breadcrumbs.map((crumb, index) => (
+            <span key={crumb.path}>
+              {index > 0 && <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>→</span>}
+              {crumb.isActive ? (
+                <span style={{ color: 'var(--text-primary)' }}>{crumb.title}</span>
+              ) : (
+                <Link to={crumb.path} style={{ color: 'var(--text-secondary)' }}>{crumb.title}</Link>
+              )}
+            </span>
+          ))}
         </nav>
         
         <h1>{course.title}</h1>
